@@ -4,9 +4,9 @@ import (
 	"log"
 	"testing"
 
+	"github.com/jaganathanb/dapps-api-go/api/models"
 	_ "github.com/jinzhu/gorm/dialects/mysql"    //mysql driver
 	_ "github.com/jinzhu/gorm/dialects/postgres" //postgres driver
-	"github.com/victorsteven/fullstack/api/models"
 	"gopkg.in/go-playground/assert.v1"
 )
 

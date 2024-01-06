@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/victorsteven/fullstack/api"
-)
+import "github.com/jaganathanb/dapps-api-go/api"
 
 func main() {
 

@@ -2,18 +2,18 @@ package controllers
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
-	"github.com/victorsteven/fullstack/api/auth"
-	"github.com/victorsteven/fullstack/api/models"
-	"github.com/victorsteven/fullstack/api/responses"
-	"github.com/victorsteven/fullstack/api/utils/formaterror"
+	"github.com/jaganathanb/dapps-api-go/api/auth"
+	"github.com/jaganathanb/dapps-api-go/api/models"
+	"github.com/jaganathanb/dapps-api-go/api/responses"
+	"github.com/jaganathanb/dapps-api-go/api/utils/formaterror"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func (server *Server) Login(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		responses.ERROR(w, http.StatusUnprocessableEntity, err)
 		return

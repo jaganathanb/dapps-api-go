@@ -6,10 +6,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jaganathanb/dapps-api-go/api/controllers"
+	"github.com/jaganathanb/dapps-api-go/api/models"
 	"github.com/jinzhu/gorm"
 	"github.com/joho/godotenv"
-	"github.com/victorsteven/fullstack/api/controllers"
-	"github.com/victorsteven/fullstack/api/models"
 )
 
 var server = controllers.Server{}
