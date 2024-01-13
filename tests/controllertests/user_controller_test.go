@@ -7,9 +7,9 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jaganathanb/dapps-api-go/api/models"
 	"gopkg.in/go-playground/assert.v1"
@@ -131,20 +131,20 @@ func TestGetUserByID(t *testing.T) {
 		log.Fatal(err)
 	}
 	userSample := []struct {
-		id           string
+		id           uuid.UUID
 		statusCode   int
 		nickname     string
 		email        string
 		errorMessage string
 	}{
 		{
-			id:         strconv.Itoa(int(user.ID)),
+			id:         user.ID,
 			statusCode: 200,
 			nickname:   user.Nickname,
 			email:      user.Email,
 		},
 		{
-			id:         "unknwon",
+			id:         uuid.Nil,
 			statusCode: 400,
 		},
 	}
@@ -154,7 +154,7 @@ func TestGetUserByID(t *testing.T) {
 		if err != nil {
 			t.Errorf("This is the error: %v\n", err)
 		}
-		req = mux.SetURLVars(req, map[string]string{"id": v.id})
+		req = mux.SetURLVars(req, map[string]string{"id": v.id.String()})
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(server.GetUser)
 		handler.ServeHTTP(rr, req)
@@ -177,25 +177,17 @@ func TestGetUserByID(t *testing.T) {
 func TestUpdateUser(t *testing.T) {
 
 	var AuthEmail, AuthPassword string
-	var AuthID uint32
+	var AuthID uuid.UUID
 
 	err := refreshUserTable()
 	if err != nil {
 		log.Fatal(err)
 	}
-	users, err := seedUsers() //we need atleast two users to properly check the update
+	_, err = seedUsers() //we need atleast two users to properly check the update
 	if err != nil {
 		log.Fatalf("Error seeding user: %v\n", err)
 	}
-	// Get only the first user
-	for _, user := range users {
-		if user.ID == 2 {
-			continue
-		}
-		AuthID = user.ID
-		AuthEmail = user.Email
-		AuthPassword = "password" //Note the password in the database is already hashed, we want unhashed
-	}
+
 	//Login the user and get the authentication token
 	token, err := server.SignIn(AuthEmail, AuthPassword)
 	if err != nil {
@@ -204,7 +196,7 @@ func TestUpdateUser(t *testing.T) {
 	tokenString := fmt.Sprintf("Bearer %v", token)
 
 	samples := []struct {
-		id             string
+		id             uuid.UUID
 		updateJSON     string
 		statusCode     int
 		updateNickname string
@@ -214,7 +206,7 @@ func TestUpdateUser(t *testing.T) {
 	}{
 		{
 			// Convert int32 to int first before converting to string
-			id:             strconv.Itoa(int(AuthID)),
+			id:             AuthID,
 			updateJSON:     `{"nickname":"Grand", "email": "grand@gmail.com", "password": "password"}`,
 			statusCode:     200,
 			updateNickname: "Grand",
@@ -224,7 +216,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			// When password field is empty
-			id:           strconv.Itoa(int(AuthID)),
+			id:           AuthID,
 			updateJSON:   `{"nickname":"Woman", "email": "woman@gmail.com", "password": ""}`,
 			statusCode:   422,
 			tokenGiven:   tokenString,
@@ -232,7 +224,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			// When no token was passed
-			id:           strconv.Itoa(int(AuthID)),
+			id:           AuthID,
 			updateJSON:   `{"nickname":"Man", "email": "man@gmail.com", "password": "password"}`,
 			statusCode:   401,
 			tokenGiven:   "",
@@ -240,7 +232,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			// When incorrect token was passed
-			id:           strconv.Itoa(int(AuthID)),
+			id:           AuthID,
 			updateJSON:   `{"nickname":"Woman", "email": "woman@gmail.com", "password": "password"}`,
 			statusCode:   401,
 			tokenGiven:   "This is incorrect token",
@@ -248,7 +240,7 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			// Remember "kenny@gmail.com" belongs to user 2
-			id:           strconv.Itoa(int(AuthID)),
+			id:           AuthID,
 			updateJSON:   `{"nickname":"Frank", "email": "kenny@gmail.com", "password": "password"}`,
 			statusCode:   500,
 			tokenGiven:   tokenString,
@@ -256,41 +248,41 @@ func TestUpdateUser(t *testing.T) {
 		},
 		{
 			// Remember "Kenny Morris" belongs to user 2
-			id:           strconv.Itoa(int(AuthID)),
+			id:           AuthID,
 			updateJSON:   `{"nickname":"Kenny Morris", "email": "grand@gmail.com", "password": "password"}`,
 			statusCode:   500,
 			tokenGiven:   tokenString,
 			errorMessage: "Nickname Already Taken",
 		},
 		{
-			id:           strconv.Itoa(int(AuthID)),
+			id:           AuthID,
 			updateJSON:   `{"nickname":"Kan", "email": "kangmail.com", "password": "password"}`,
 			statusCode:   422,
 			tokenGiven:   tokenString,
 			errorMessage: "Invalid Email",
 		},
 		{
-			id:           strconv.Itoa(int(AuthID)),
+			id:           AuthID,
 			updateJSON:   `{"nickname": "", "email": "kan@gmail.com", "password": "password"}`,
 			statusCode:   422,
 			tokenGiven:   tokenString,
 			errorMessage: "Required Nickname",
 		},
 		{
-			id:           strconv.Itoa(int(AuthID)),
+			id:           AuthID,
 			updateJSON:   `{"nickname": "Kan", "email": "", "password": "password"}`,
 			statusCode:   422,
 			tokenGiven:   tokenString,
 			errorMessage: "Required Email",
 		},
 		{
-			id:         "unknwon",
+			id:         uuid.Nil,
 			tokenGiven: tokenString,
 			statusCode: 400,
 		},
 		{
 			// When user 2 is using user 1 token
-			id:           strconv.Itoa(int(2)),
+			id:           AuthID,
 			updateJSON:   `{"nickname": "Mike", "email": "mike@gmail.com", "password": "password"}`,
 			tokenGiven:   tokenString,
 			statusCode:   401,
@@ -304,7 +296,7 @@ func TestUpdateUser(t *testing.T) {
 		if err != nil {
 			t.Errorf("This is the error: %v\n", err)
 		}
-		req = mux.SetURLVars(req, map[string]string{"id": v.id})
+		req = mux.SetURLVars(req, map[string]string{"id": v.id.String()})
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(server.UpdateUser)
@@ -332,26 +324,18 @@ func TestUpdateUser(t *testing.T) {
 func TestDeleteUser(t *testing.T) {
 
 	var AuthEmail, AuthPassword string
-	var AuthID uint32
+	var AuthID uuid.UUID
 
 	err := refreshUserTable()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	users, err := seedUsers() //we need atleast two users to properly check the update
+	_, err = seedUsers() //we need atleast two users to properly check the update
 	if err != nil {
 		log.Fatalf("Error seeding user: %v\n", err)
 	}
-	// Get only the first and log him in
-	for _, user := range users {
-		if user.ID == 2 {
-			continue
-		}
-		AuthID = user.ID
-		AuthEmail = user.Email
-		AuthPassword = "password" ////Note the password in the database is already hashed, we want unhashed
-	}
+
 	//Login the user and get the authentication token
 	token, err := server.SignIn(AuthEmail, AuthPassword)
 	if err != nil {
@@ -360,40 +344,40 @@ func TestDeleteUser(t *testing.T) {
 	tokenString := fmt.Sprintf("Bearer %v", token)
 
 	userSample := []struct {
-		id           string
+		id           uuid.UUID
 		tokenGiven   string
 		statusCode   int
 		errorMessage string
 	}{
 		{
 			// Convert int32 to int first before converting to string
-			id:           strconv.Itoa(int(AuthID)),
+			id:           AuthID,
 			tokenGiven:   tokenString,
 			statusCode:   204,
 			errorMessage: "",
 		},
 		{
 			// When no token is given
-			id:           strconv.Itoa(int(AuthID)),
+			id:           AuthID,
 			tokenGiven:   "",
 			statusCode:   401,
 			errorMessage: "Unauthorized",
 		},
 		{
 			// When incorrect token is given
-			id:           strconv.Itoa(int(AuthID)),
+			id:           AuthID,
 			tokenGiven:   "This is an incorrect token",
 			statusCode:   401,
 			errorMessage: "Unauthorized",
 		},
 		{
-			id:         "unknwon",
+			id:         uuid.Nil,
 			tokenGiven: tokenString,
 			statusCode: 400,
 		},
 		{
 			// User 2 trying to use User 1 token
-			id:           strconv.Itoa(int(2)),
+			id:           AuthID,
 			tokenGiven:   tokenString,
 			statusCode:   401,
 			errorMessage: "Unauthorized",
@@ -405,7 +389,7 @@ func TestDeleteUser(t *testing.T) {
 		if err != nil {
 			t.Errorf("This is the error: %v\n", err)
 		}
-		req = mux.SetURLVars(req, map[string]string{"id": v.id})
+		req = mux.SetURLVars(req, map[string]string{"id": v.id.String()})
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(server.DeleteUser)
 

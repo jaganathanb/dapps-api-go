@@ -4,6 +4,7 @@ import (
 	"log"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/jaganathanb/dapps-api-go/api/models"
 	_ "github.com/jinzhu/gorm/dialects/mysql"    //mysql driver
 	_ "github.com/jinzhu/gorm/dialects/postgres" //postgres driver
@@ -37,7 +38,7 @@ func TestSaveUser(t *testing.T) {
 		log.Fatalf("Error user refreshing table %v\n", err)
 	}
 	newUser := models.User{
-		ID:       1,
+		ID:       uuid.Nil,
 		Email:    "test@gmail.com",
 		Nickname: "test",
 		Password: "password",
@@ -86,7 +87,7 @@ func TestUpdateAUser(t *testing.T) {
 	}
 
 	userUpdate := models.User{
-		ID:       1,
+		ID:       uuid.Nil,
 		Nickname: "modiUpdate",
 		Email:    "modiupdate@gmail.com",
 		Password: "password",

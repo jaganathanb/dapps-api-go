@@ -3,41 +3,50 @@ package seed
 import (
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/jaganathanb/dapps-api-go/api/models"
 	"github.com/jinzhu/gorm"
 )
 
 var users = []models.User{
-	models.User{
+	{
+		ID:       uuid.New(),
 		Nickname: "Steven victor",
 		Email:    "steven@gmail.com",
 		Password: "password",
 	},
-	models.User{
+	{
+		ID:       uuid.New(),
 		Nickname: "Martin Luther",
 		Email:    "luther@gmail.com",
 		Password: "password",
 	},
 }
 
-var posts = []models.Post{
-	models.Post{
-		Title:   "Title 1",
-		Content: "Hello world 1",
+var gsts = []models.GST{
+	{
+		ID:        uuid.New(),
+		GSTIN:     "GSTIN1",
+		Address:   "Hello world 1",
+		TradeName: "Trade 1",
+		OwnerName: "Owner 1",
 	},
-	models.Post{
-		Title:   "Title 2",
-		Content: "Hello world 2",
+	{
+		ID:        uuid.New(),
+		GSTIN:     "GSTIN2",
+		Address:   "Hello world 2",
+		TradeName: "Trade 2",
+		OwnerName: "Owner 2",
 	},
 }
 
 func Load(db *gorm.DB) {
 
-	err := db.Debug().DropTableIfExists(&models.Post{}, &models.User{}).Error
+	err := db.Debug().DropTableIfExists(&models.GST{}, &models.User{}).Error
 	if err != nil {
 		log.Fatalf("cannot drop table: %v", err)
 	}
-	err = db.Debug().AutoMigrate(&models.User{}, &models.Post{}).Error
+	err = db.Debug().AutoMigrate(&models.User{}, &models.GST{}).Error
 	if err != nil {
 		log.Fatalf("cannot migrate table: %v", err)
 	}
@@ -49,14 +58,13 @@ func Load(db *gorm.DB) {
 		}
 	*/
 
-	for i, _ := range users {
+	for i := range users {
 		err = db.Debug().Model(&models.User{}).Create(&users[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed users table: %v", err)
 		}
-		posts[i].AuthorID = users[i].ID
 
-		err = db.Debug().Model(&models.Post{}).Create(&posts[i]).Error
+		err = db.Debug().Model(&models.GST{}).Create(&gsts[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed posts table: %v", err)
 		}

@@ -14,7 +14,7 @@ import (
 
 var server = controllers.Server{}
 var userInstance = models.User{}
-var postInstance = models.Post{}
+var postInstance = models.GST{}
 
 func TestMain(m *testing.M) {
 	var err error
@@ -110,12 +110,12 @@ func seedOneUser() (models.User, error) {
 func seedUsers() error {
 
 	users := []models.User{
-		models.User{
+		{
 			Nickname: "Steven victor",
 			Email:    "steven@gmail.com",
 			Password: "password",
 		},
-		models.User{
+		{
 			Nickname: "Kenny Morris",
 			Email:    "kenny@gmail.com",
 			Password: "password",
@@ -137,12 +137,12 @@ func refreshUserAndPostTable() error {
 
 	server.DB.Exec("SET foreign_key_checks=0")
 	// NOTE: when deleting first delete Post as Post is depending on User table
-	err := server.DB.Debug().DropTableIfExists(&models.Post{}, &models.User{}).Error
+	err := server.DB.Debug().DropTableIfExists(&models.GST{}, &models.User{}).Error
 	if err != nil {
 		return err
 	}
 	server.DB.Exec("SET foreign_key_checks=1")
-	err = server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}).Error
+	err = server.DB.Debug().AutoMigrate(&models.User{}, &models.GST{}).Error
 	if err != nil {
 		return err
 	}
@@ -151,11 +151,11 @@ func refreshUserAndPostTable() error {
 	return nil
 }
 
-func seedOneUserAndOnePost() (models.Post, error) {
+func seedOneUserAndOnePost() (models.GST, error) {
 
 	err := refreshUserAndPostTable()
 	if err != nil {
-		return models.Post{}, err
+		return models.GST{}, err
 	}
 	user := models.User{
 		Nickname: "Sam Phil",
@@ -164,49 +164,49 @@ func seedOneUserAndOnePost() (models.Post, error) {
 	}
 	err = server.DB.Debug().Model(&models.User{}).Create(&user).Error
 	if err != nil {
-		return models.Post{}, err
+		return models.GST{}, err
 	}
-	post := models.Post{
-		Title:    "This is the title sam",
-		Content:  "This is the content sam",
-		AuthorID: user.ID,
+	post := models.GST{
+		GSTIN:     "This is the title sam",
+		TradeName: "This is the content sam",
+		OwnerName: "Test",
 	}
-	err = server.DB.Debug().Model(&models.Post{}).Create(&post).Error
+	err = server.DB.Debug().Model(&models.GST{}).Create(&post).Error
 	if err != nil {
-		return models.Post{}, err
+		return models.GST{}, err
 	}
 
 	log.Printf("seedOneUserAndOnePost routine OK !!!")
 	return post, nil
 }
 
-func seedUsersAndPosts() ([]models.User, []models.Post, error) {
+func seedUsersAndPosts() ([]models.User, []models.GST, error) {
 
 	var err error
 
 	if err != nil {
-		return []models.User{}, []models.Post{}, err
+		return []models.User{}, []models.GST{}, err
 	}
 	var users = []models.User{
-		models.User{
+		{
 			Nickname: "Steven victor",
 			Email:    "steven@gmail.com",
 			Password: "password",
 		},
-		models.User{
+		{
 			Nickname: "Magu Frank",
 			Email:    "magu@gmail.com",
 			Password: "password",
 		},
 	}
-	var posts = []models.Post{
-		models.Post{
-			Title:   "Title 1",
-			Content: "Hello world 1",
+	var posts = []models.GST{
+		{
+			GSTIN:     "Title 1",
+			TradeName: "Hello world 1",
 		},
-		models.Post{
-			Title:   "Title 2",
-			Content: "Hello world 2",
+		{
+			GSTIN:     "Title 2",
+			TradeName: "Hello world 2",
 		},
 	}
 
@@ -215,9 +215,8 @@ func seedUsersAndPosts() ([]models.User, []models.Post, error) {
 		if err != nil {
 			log.Fatalf("cannot seed users table: %v", err)
 		}
-		posts[i].AuthorID = users[i].ID
 
-		err = server.DB.Debug().Model(&models.Post{}).Create(&posts[i]).Error
+		err = server.DB.Debug().Model(&models.GST{}).Create(&posts[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed posts table: %v", err)
 		}

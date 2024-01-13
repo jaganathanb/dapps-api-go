@@ -55,9 +55,10 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 		server.DB.Exec("PRAGMA foreign_keys = ON")
 	}
 
-	server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}) //database migration
+	server.DB.Debug().AutoMigrate(&models.User{}, &models.GST{}) //database migration
 
-	server.Router = mux.NewRouter()
+	route := mux.NewRouter()
+	server.Router = route.PathPrefix("/api/v1").Subrouter()
 
 	server.initializeRoutes()
 }

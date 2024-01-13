@@ -14,7 +14,7 @@ import (
 
 var server = controllers.Server{}
 var userInstance = models.User{}
-var postInstance = models.Post{}
+var gstInstance = models.GST{}
 
 func TestMain(m *testing.M) {
 	err := godotenv.Load(os.ExpandEnv("../../.env"))
@@ -78,11 +78,11 @@ func refreshUserTable() error {
 			return err
 		}
 	*/
-	err := server.DB.DropTableIfExists(&models.Post{}, &models.User{}).Error
+	err := server.DB.DropTableIfExists(&models.GST{}, &models.User{}).Error
 	if err != nil {
 		return err
 	}
-	err = server.DB.AutoMigrate(&models.User{}, &models.Post{}).Error
+	err = server.DB.AutoMigrate(&models.User{}, &models.GST{}).Error
 	if err != nil {
 		return err
 	}
@@ -118,18 +118,18 @@ func seedUsers() ([]models.User, error) {
 		return nil, err
 	}
 	users := []models.User{
-		models.User{
+		{
 			Nickname: "Steven victor",
 			Email:    "steven@gmail.com",
 			Password: "password",
 		},
-		models.User{
+		{
 			Nickname: "Kenny Morris",
 			Email:    "kenny@gmail.com",
 			Password: "password",
 		},
 	}
-	for i, _ := range users {
+	for i := range users {
 		err := server.DB.Model(&models.User{}).Create(&users[i]).Error
 		if err != nil {
 			return []models.User{}, err
@@ -138,13 +138,13 @@ func seedUsers() ([]models.User, error) {
 	return users, nil
 }
 
-func refreshUserAndPostTable() error {
+func refreshUserAndGstTable() error {
 
-	err := server.DB.DropTableIfExists(&models.Post{}, &models.User{}).Error
+	err := server.DB.DropTableIfExists(&models.GST{}, &models.User{}).Error
 	if err != nil {
 		return err
 	}
-	err = server.DB.AutoMigrate(&models.User{}, &models.Post{}).Error
+	err = server.DB.AutoMigrate(&models.User{}, &models.GST{}).Error
 	if err != nil {
 		return err
 	}
@@ -152,11 +152,11 @@ func refreshUserAndPostTable() error {
 	return nil
 }
 
-func seedOneUserAndOnePost() (models.Post, error) {
+func seedOneUserAndOneGst() (models.GST, error) {
 
-	err := refreshUserAndPostTable()
+	err := refreshUserAndGstTable()
 	if err != nil {
-		return models.Post{}, err
+		return models.GST{}, err
 	}
 	user := models.User{
 		Nickname: "Sam Phil",
@@ -165,61 +165,61 @@ func seedOneUserAndOnePost() (models.Post, error) {
 	}
 	err = server.DB.Model(&models.User{}).Create(&user).Error
 	if err != nil {
-		return models.Post{}, err
+		return models.GST{}, err
 	}
-	post := models.Post{
-		Title:    "This is the title sam",
-		Content:  "This is the content sam",
-		AuthorID: user.ID,
+	gst := models.GST{
+		GSTIN:     "GSTIN1",
+		TradeName: "This is the content sam",
+		Address:   "Addr 1",
 	}
-	err = server.DB.Model(&models.Post{}).Create(&post).Error
+	err = server.DB.Model(&models.GST{}).Create(&gst).Error
 	if err != nil {
-		return models.Post{}, err
+		return models.GST{}, err
 	}
-	return post, nil
+	return gst, nil
 }
 
-func seedUsersAndPosts() ([]models.User, []models.Post, error) {
+func seedUsersAndGsts() ([]models.User, []models.GST, error) {
 
 	var err error
 
 	if err != nil {
-		return []models.User{}, []models.Post{}, err
+		return []models.User{}, []models.GST{}, err
 	}
 	var users = []models.User{
-		models.User{
+		{
 			Nickname: "Steven victor",
 			Email:    "steven@gmail.com",
 			Password: "password",
 		},
-		models.User{
+		{
 			Nickname: "Magu Frank",
 			Email:    "magu@gmail.com",
 			Password: "password",
 		},
 	}
-	var posts = []models.Post{
-		models.Post{
-			Title:   "Title 1",
-			Content: "Hello world 1",
+	var gsts = []models.GST{
+		{
+			GSTIN:     "GSTIN1",
+			TradeName: "Hello world 1",
 		},
-		models.Post{
-			Title:   "Title 2",
-			Content: "Hello world 2",
+		{
+			GSTIN:     "GSTIN2",
+			TradeName: "Hello world 2",
 		},
 	}
 
-	for i, _ := range users {
+	for i := range users {
 		err = server.DB.Model(&models.User{}).Create(&users[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed users table: %v", err)
 		}
-		posts[i].AuthorID = users[i].ID
 
-		err = server.DB.Model(&models.Post{}).Create(&posts[i]).Error
+		err = server.DB.Model(&models.GST{}).Create(&gsts[i]).Error
 		if err != nil {
-			log.Fatalf("cannot seed posts table: %v", err)
+			log.Fatalf("cannot seed gsts table: %v", err)
 		}
 	}
-	return users, posts, nil
+
+	return users, gsts, nil
 }

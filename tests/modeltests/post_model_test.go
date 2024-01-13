@@ -4,6 +4,7 @@ import (
 	"log"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/jaganathanb/dapps-api-go/api/models"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"gopkg.in/go-playground/assert.v1"
@@ -19,7 +20,7 @@ func TestFindAllPosts(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Error seeding user and post table %v\n", err)
 	}
-	posts, err := postInstance.FindAllPosts(server.DB)
+	posts, err := postInstance.FindAllGSTs(server.DB)
 	if err != nil {
 		t.Errorf("this is the error getting the posts: %v\n", err)
 		return
@@ -34,26 +35,26 @@ func TestSavePost(t *testing.T) {
 		log.Fatalf("Error user and post refreshing table %v\n", err)
 	}
 
-	user, err := seedOneUser()
+	_, err = seedOneUser()
 	if err != nil {
 		log.Fatalf("Cannot seed user %v\n", err)
 	}
 
-	newPost := models.Post{
-		ID:       1,
-		Title:    "This is the title",
-		Content:  "This is the content",
-		AuthorID: user.ID,
+	newPost := models.GST{
+		ID:        uuid.Nil,
+		GSTIN:     "This is the title",
+		TradeName: "This is the content",
+		OwnerName: "Test",
 	}
-	savedPost, err := newPost.SavePost(server.DB)
+	savedPost, err := newPost.SaveGST(server.DB)
 	if err != nil {
 		t.Errorf("this is the error getting the post: %v\n", err)
 		return
 	}
 	assert.Equal(t, newPost.ID, savedPost.ID)
-	assert.Equal(t, newPost.Title, savedPost.Title)
-	assert.Equal(t, newPost.Content, savedPost.Content)
-	assert.Equal(t, newPost.AuthorID, savedPost.AuthorID)
+	assert.Equal(t, newPost.GSTIN, savedPost.GSTIN)
+	assert.Equal(t, newPost.TradeName, savedPost.TradeName)
+	assert.Equal(t, newPost.OwnerName, savedPost.OwnerName)
 
 }
 
@@ -67,14 +68,14 @@ func TestGetPostByID(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Error Seeding User and post table")
 	}
-	foundPost, err := postInstance.FindPostByID(server.DB, post.ID)
+	foundPost, err := postInstance.FindGSTByID(server.DB, post.GSTIN)
 	if err != nil {
 		t.Errorf("this is the error getting one user: %v\n", err)
 		return
 	}
 	assert.Equal(t, foundPost.ID, post.ID)
-	assert.Equal(t, foundPost.Title, post.Title)
-	assert.Equal(t, foundPost.Content, post.Content)
+	assert.Equal(t, foundPost.GSTIN, post.GSTIN)
+	assert.Equal(t, foundPost.TradeName, post.TradeName)
 }
 
 func TestUpdateAPost(t *testing.T) {
@@ -87,21 +88,21 @@ func TestUpdateAPost(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Error Seeding table")
 	}
-	postUpdate := models.Post{
-		ID:       1,
-		Title:    "modiUpdate",
-		Content:  "modiupdate@gmail.com",
-		AuthorID: post.AuthorID,
+	postUpdate := models.GST{
+		ID:        uuid.Nil,
+		GSTIN:     "modiUpdate",
+		TradeName: "modiupdate@gmail.com",
+		OwnerName: post.OwnerName,
 	}
-	updatedPost, err := postUpdate.UpdateAPost(server.DB)
+	updatedPost, err := postUpdate.UpdateAGST(server.DB)
 	if err != nil {
 		t.Errorf("this is the error updating the user: %v\n", err)
 		return
 	}
 	assert.Equal(t, updatedPost.ID, postUpdate.ID)
-	assert.Equal(t, updatedPost.Title, postUpdate.Title)
-	assert.Equal(t, updatedPost.Content, postUpdate.Content)
-	assert.Equal(t, updatedPost.AuthorID, postUpdate.AuthorID)
+	assert.Equal(t, updatedPost.GSTIN, postUpdate.GSTIN)
+	assert.Equal(t, updatedPost.TradeName, postUpdate.TradeName)
+	assert.Equal(t, updatedPost.OwnerName, postUpdate.OwnerName)
 }
 
 func TestDeleteAPost(t *testing.T) {
@@ -114,7 +115,7 @@ func TestDeleteAPost(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Error Seeding tables")
 	}
-	isDeleted, err := postInstance.DeleteAPost(server.DB, post.ID, post.AuthorID)
+	isDeleted, err := postInstance.DeleteAGST(server.DB, post.GSTIN)
 	if err != nil {
 		t.Errorf("this is the error deleting the user: %v\n", err)
 		return

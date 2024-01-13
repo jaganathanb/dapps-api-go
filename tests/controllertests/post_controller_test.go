@@ -7,17 +7,18 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/jaganathanb/dapps-api-go/api/models"
 	"gopkg.in/go-playground/assert.v1"
 )
 
-func TestCreatePost(t *testing.T) {
+func TestCreateGST(t *testing.T) {
 
-	err := refreshUserAndPostTable()
+	err := refreshUserAndGstTable()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,7 +47,6 @@ func TestCreatePost(t *testing.T) {
 			tokenGiven:   tokenString,
 			title:        "The title",
 			content:      "the content",
-			author_id:    user.ID,
 			errorMessage: "",
 		},
 		{
@@ -97,12 +97,12 @@ func TestCreatePost(t *testing.T) {
 	}
 	for _, v := range samples {
 
-		req, err := http.NewRequest("POST", "/posts", bytes.NewBufferString(v.inputJSON))
+		req, err := http.NewRequest("POST", "/gsts", bytes.NewBufferString(v.inputJSON))
 		if err != nil {
 			t.Errorf("this is the error: %v\n", err)
 		}
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(server.CreatePost)
+		handler := http.HandlerFunc(server.CreateGst)
 
 		req.Header.Set("Authorization", v.tokenGiven)
 		handler.ServeHTTP(rr, req)
@@ -124,129 +124,124 @@ func TestCreatePost(t *testing.T) {
 	}
 }
 
-func TestGetPosts(t *testing.T) {
+func TestGetGsts(t *testing.T) {
 
-	err := refreshUserAndPostTable()
+	err := refreshUserAndGstTable()
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, _, err = seedUsersAndPosts()
+	_, _, err = seedUsersAndGsts()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	req, err := http.NewRequest("GET", "/posts", nil)
+	req, err := http.NewRequest("GET", "/gsts", nil)
 	if err != nil {
 		t.Errorf("this is the error: %v\n", err)
 	}
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(server.GetPosts)
+	handler := http.HandlerFunc(server.GetGsts)
 	handler.ServeHTTP(rr, req)
 
-	var posts []models.Post
-	err = json.Unmarshal([]byte(rr.Body.String()), &posts)
+	var gsts []models.GST
+	err = json.Unmarshal([]byte(rr.Body.String()), &gsts)
 
 	assert.Equal(t, rr.Code, http.StatusOK)
-	assert.Equal(t, len(posts), 2)
+	assert.Equal(t, len(gsts), 2)
 }
-func TestGetPostByID(t *testing.T) {
+func TestGetGstByID(t *testing.T) {
 
-	err := refreshUserAndPostTable()
+	err := refreshUserAndGstTable()
 	if err != nil {
 		log.Fatal(err)
 	}
-	post, err := seedOneUserAndOnePost()
+	gst, err := seedOneUserAndOneGst()
 	if err != nil {
 		log.Fatal(err)
 	}
-	postSample := []struct {
-		id           string
+	gstSample := []struct {
+		ID           uuid.UUID
+		GSTIN        string
+		TradeName    string
+		RegisteredAt time.Time
+		Address      string
+		OwnerName    string
 		statusCode   int
-		title        string
-		content      string
-		author_id    uint32
-		errorMessage string
 	}{
 		{
-			id:         strconv.Itoa(int(post.ID)),
+			ID:         gst.ID,
 			statusCode: 200,
-			title:      post.Title,
-			content:    post.Content,
-			author_id:  post.AuthorID,
+			GSTIN:      gst.GSTIN,
+			TradeName:  gst.TradeName,
+			OwnerName:  gst.OwnerName,
 		},
 		{
-			id:         "unknwon",
+			ID:         uuid.Nil,
 			statusCode: 400,
 		},
 	}
-	for _, v := range postSample {
+	for _, v := range gstSample {
 
-		req, err := http.NewRequest("GET", "/posts", nil)
+		req, err := http.NewRequest("GET", "/gsts", nil)
 		if err != nil {
 			t.Errorf("this is the error: %v\n", err)
 		}
-		req = mux.SetURLVars(req, map[string]string{"id": v.id})
+
+		req = mux.SetURLVars(req, map[string]string{"gstin": v.GSTIN})
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(server.GetPost)
+		handler := http.HandlerFunc(server.GetGst)
 		handler.ServeHTTP(rr, req)
 
 		responseMap := make(map[string]interface{})
 		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+
 		if err != nil {
 			log.Fatalf("Cannot convert to json: %v", err)
 		}
 		assert.Equal(t, rr.Code, v.statusCode)
 
 		if v.statusCode == 200 {
-			assert.Equal(t, post.Title, responseMap["title"])
-			assert.Equal(t, post.Content, responseMap["content"])
-			assert.Equal(t, float64(post.AuthorID), responseMap["author_id"]) //the response author id is float64
+			assert.Equal(t, gst.GSTIN, responseMap["GSTIN"])
+			assert.Equal(t, gst.TradeName, responseMap["TradeName"])
+			assert.Equal(t, gst.Address, responseMap["Address"]) //the response author id is float64
 		}
 	}
 }
 
-func TestUpdatePost(t *testing.T) {
+func TestUpdateGst(t *testing.T) {
 
-	var PostUserEmail, PostUserPassword string
-	var AuthPostAuthorID uint32
-	var AuthPostID uint64
+	var GstUserEmail, GstUserPassword string
+	var AuthGstAuthorID uint32
+	var AuthGstID uuid.UUID
 
-	err := refreshUserAndPostTable()
+	err := refreshUserAndGstTable()
 	if err != nil {
 		log.Fatal(err)
 	}
-	users, posts, err := seedUsersAndPosts()
+	_, gsts, err := seedUsersAndGsts()
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Get only the first user
-	for _, user := range users {
-		if user.ID == 2 {
-			continue
-		}
-		PostUserEmail = user.Email
-		PostUserPassword = "password" //Note the password in the database is already hashed, we want unhashed
-	}
+
 	//Login the user and get the authentication token
-	token, err := server.SignIn(PostUserEmail, PostUserPassword)
+	token, err := server.SignIn(GstUserEmail, GstUserPassword)
 	if err != nil {
 		log.Fatalf("cannot login: %v\n", err)
 	}
 	tokenString := fmt.Sprintf("Bearer %v", token)
 
-	// Get only the first post
-	for _, post := range posts {
-		if post.ID == 2 {
+	// Get only the first gst
+	for _, gst := range gsts {
+		if gst.ID == uuid.Nil {
 			continue
 		}
-		AuthPostID = post.ID
-		AuthPostAuthorID = post.AuthorID
+		AuthGstID = gst.ID
 	}
-	// fmt.Printf("this is the auth post: %v\n", AuthPostID)
+	// fmt.Printf("this is the auth gst: %v\n", AuthGstID)
 
 	samples := []struct {
-		id           string
+		id           uuid.UUID
 		updateJSON   string
 		statusCode   int
 		title        string
@@ -257,18 +252,18 @@ func TestUpdatePost(t *testing.T) {
 	}{
 		{
 			// Convert int64 to int first before converting to string
-			id:           strconv.Itoa(int(AuthPostID)),
-			updateJSON:   `{"title":"The updated post", "content": "This is the updated content", "author_id": 1}`,
+			id:           AuthGstID,
+			updateJSON:   `{"title":"The updated gst", "content": "This is the updated content", "author_id": 1}`,
 			statusCode:   200,
-			title:        "The updated post",
+			title:        "The updated gst",
 			content:      "This is the updated content",
-			author_id:    AuthPostAuthorID,
+			author_id:    AuthGstAuthorID,
 			tokenGiven:   tokenString,
 			errorMessage: "",
 		},
 		{
 			// When no token is provided
-			id:           strconv.Itoa(int(AuthPostID)),
+			id:           AuthGstID,
 			updateJSON:   `{"title":"This is still another title", "content": "This is the updated content", "author_id": 1}`,
 			tokenGiven:   "",
 			statusCode:   401,
@@ -276,47 +271,47 @@ func TestUpdatePost(t *testing.T) {
 		},
 		{
 			// When incorrect token is provided
-			id:           strconv.Itoa(int(AuthPostID)),
+			id:           AuthGstID,
 			updateJSON:   `{"title":"This is still another title", "content": "This is the updated content", "author_id": 1}`,
 			tokenGiven:   "this is an incorrect token",
 			statusCode:   401,
 			errorMessage: "Unauthorized",
 		},
 		{
-			//Note: "Title 2" belongs to post 2, and title must be unique
-			id:           strconv.Itoa(int(AuthPostID)),
+			//Note: "Title 2" belongs to gst 2, and title must be unique
+			id:           AuthGstID,
 			updateJSON:   `{"title":"Title 2", "content": "This is the updated content", "author_id": 1}`,
 			statusCode:   500,
 			tokenGiven:   tokenString,
 			errorMessage: "Title Already Taken",
 		},
 		{
-			id:           strconv.Itoa(int(AuthPostID)),
+			id:           AuthGstID,
 			updateJSON:   `{"title":"", "content": "This is the updated content", "author_id": 1}`,
 			statusCode:   422,
 			tokenGiven:   tokenString,
 			errorMessage: "Required Title",
 		},
 		{
-			id:           strconv.Itoa(int(AuthPostID)),
+			id:           AuthGstID,
 			updateJSON:   `{"title":"Awesome title", "content": "", "author_id": 1}`,
 			statusCode:   422,
 			tokenGiven:   tokenString,
 			errorMessage: "Required Content",
 		},
 		{
-			id:           strconv.Itoa(int(AuthPostID)),
+			id:           AuthGstID,
 			updateJSON:   `{"title":"This is another title", "content": "This is the updated content"}`,
 			statusCode:   401,
 			tokenGiven:   tokenString,
 			errorMessage: "Unauthorized",
 		},
 		{
-			id:         "unknwon",
+			id:         uuid.Nil,
 			statusCode: 400,
 		},
 		{
-			id:           strconv.Itoa(int(AuthPostID)),
+			id:           AuthGstID,
 			updateJSON:   `{"title":"This is still another title", "content": "This is the updated content", "author_id": 2}`,
 			tokenGiven:   tokenString,
 			statusCode:   401,
@@ -326,13 +321,13 @@ func TestUpdatePost(t *testing.T) {
 
 	for _, v := range samples {
 
-		req, err := http.NewRequest("POST", "/posts", bytes.NewBufferString(v.updateJSON))
+		req, err := http.NewRequest("POST", "/gsts", bytes.NewBufferString(v.updateJSON))
 		if err != nil {
 			t.Errorf("this is the error: %v\n", err)
 		}
-		req = mux.SetURLVars(req, map[string]string{"id": v.id})
+		req = mux.SetURLVars(req, map[string]string{"gstin": v.id.String()})
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(server.UpdatePost)
+		handler := http.HandlerFunc(server.UpdateGst)
 
 		req.Header.Set("Authorization", v.tokenGiven)
 
@@ -355,45 +350,37 @@ func TestUpdatePost(t *testing.T) {
 	}
 }
 
-func TestDeletePost(t *testing.T) {
+func TestDeleteGST(t *testing.T) {
 
-	var PostUserEmail, PostUserPassword string
-	var PostUserID uint32
-	var AuthPostID uint64
+	var GstUserEmail, GstUserPassword string
+	var GstUserID uint32
+	var AuthGstID uuid.UUID
 
-	err := refreshUserAndPostTable()
+	err := refreshUserAndGstTable()
 	if err != nil {
 		log.Fatal(err)
 	}
-	users, posts, err := seedUsersAndPosts()
+	_, gsts, err := seedUsersAndGsts()
 	if err != nil {
 		log.Fatal(err)
 	}
-	//Let's get only the Second user
-	for _, user := range users {
-		if user.ID == 1 {
-			continue
-		}
-		PostUserEmail = user.Email
-		PostUserPassword = "password" //Note the password in the database is already hashed, we want unhashed
-	}
+
 	//Login the user and get the authentication token
-	token, err := server.SignIn(PostUserEmail, PostUserPassword)
+	token, err := server.SignIn(GstUserEmail, GstUserPassword)
 	if err != nil {
 		log.Fatalf("cannot login: %v\n", err)
 	}
 	tokenString := fmt.Sprintf("Bearer %v", token)
 
-	// Get only the second post
-	for _, post := range posts {
-		if post.ID == 1 {
+	// Get only the second gst
+	for _, gst := range gsts {
+		if gst.ID == uuid.Nil {
 			continue
 		}
-		AuthPostID = post.ID
-		PostUserID = post.AuthorID
+		AuthGstID = gst.ID
 	}
-	postSample := []struct {
-		id           string
+	gstSample := []struct {
+		id           uuid.UUID
 		author_id    uint32
 		tokenGiven   string
 		statusCode   int
@@ -401,47 +388,46 @@ func TestDeletePost(t *testing.T) {
 	}{
 		{
 			// Convert int64 to int first before converting to string
-			id:           strconv.Itoa(int(AuthPostID)),
-			author_id:    PostUserID,
+			id:           AuthGstID,
+			author_id:    GstUserID,
 			tokenGiven:   tokenString,
 			statusCode:   204,
 			errorMessage: "",
 		},
 		{
 			// When empty token is passed
-			id:           strconv.Itoa(int(AuthPostID)),
-			author_id:    PostUserID,
+			id:           AuthGstID,
+			author_id:    GstUserID,
 			tokenGiven:   "",
 			statusCode:   401,
 			errorMessage: "Unauthorized",
 		},
 		{
 			// When incorrect token is passed
-			id:           strconv.Itoa(int(AuthPostID)),
-			author_id:    PostUserID,
+			id:           AuthGstID,
+			author_id:    GstUserID,
 			tokenGiven:   "This is an incorrect token",
 			statusCode:   401,
 			errorMessage: "Unauthorized",
 		},
 		{
-			id:         "unknwon",
+			id:         uuid.Nil,
 			tokenGiven: tokenString,
 			statusCode: 400,
 		},
 		{
-			id:           strconv.Itoa(int(1)),
-			author_id:    1,
+			id:           AuthGstID,
 			statusCode:   401,
 			errorMessage: "Unauthorized",
 		},
 	}
-	for _, v := range postSample {
+	for _, v := range gstSample {
 
-		req, _ := http.NewRequest("GET", "/posts", nil)
-		req = mux.SetURLVars(req, map[string]string{"id": v.id})
+		req, _ := http.NewRequest("GET", "/gsts", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": v.id.String()})
 
 		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(server.DeletePost)
+		handler := http.HandlerFunc(server.DeleteGst)
 
 		req.Header.Set("Authorization", v.tokenGiven)
 

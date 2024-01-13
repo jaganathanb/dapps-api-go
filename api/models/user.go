@@ -8,12 +8,13 @@ import (
 	"time"
 
 	"github.com/badoux/checkmail"
+	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	ID        uint32    `gorm:"primary_key;auto_increment" json:"id"`
+	ID        uuid.UUID `gorm:"type:text;not null;size:32"`
 	Nickname  string    `gorm:"size:255;not null;unique" json:"nickname"`
 	Email     string    `gorm:"size:100;not null;unique" json:"email"`
 	Password  string    `gorm:"size:100;not null;" json:"password"`
@@ -39,7 +40,7 @@ func (u *User) BeforeSave() error {
 }
 
 func (u *User) Prepare() {
-	u.ID = 0
+	u.ID = uuid.New()
 	u.Nickname = html.EscapeString(strings.TrimSpace(u.Nickname))
 	u.Email = html.EscapeString(strings.TrimSpace(u.Email))
 	u.CreatedAt = time.Now()
@@ -112,9 +113,9 @@ func (u *User) FindAllUsers(db *gorm.DB) (*[]User, error) {
 	return &users, err
 }
 
-func (u *User) FindUserByID(db *gorm.DB, uid uint32) (*User, error) {
+func (u *User) FindUserByID(db *gorm.DB, uid uuid.UUID) (*User, error) {
 	var err error
-	err = db.Debug().Model(User{}).Where("id = ?", uid).Take(&u).Error
+	err = db.Debug().Model(User{}).Where("ID = ?", uid).Take(&u).Error
 	if err != nil {
 		return &User{}, err
 	}
@@ -124,18 +125,18 @@ func (u *User) FindUserByID(db *gorm.DB, uid uint32) (*User, error) {
 	return u, err
 }
 
-func (u *User) UpdateAUser(db *gorm.DB, uid uint32) (*User, error) {
+func (u *User) UpdateAUser(db *gorm.DB, uid uuid.UUID) (*User, error) {
 
 	// To hash the password
 	err := u.BeforeSave()
 	if err != nil {
 		log.Fatal(err)
 	}
-	db = db.Debug().Model(&User{}).Where("id = ?", uid).Take(&User{}).UpdateColumns(
+	db = db.Debug().Model(&User{}).Where("ID = ?", uid).Take(&User{}).UpdateColumns(
 		map[string]interface{}{
-			"password":  u.Password,
-			"nickname":  u.Nickname,
-			"email":     u.Email,
+			"password":   u.Password,
+			"nickname":   u.Nickname,
+			"email":      u.Email,
 			"updated_at": time.Now(),
 		},
 	)
@@ -150,9 +151,9 @@ func (u *User) UpdateAUser(db *gorm.DB, uid uint32) (*User, error) {
 	return u, nil
 }
 
-func (u *User) DeleteAUser(db *gorm.DB, uid uint32) (int64, error) {
+func (u *User) DeleteAUser(db *gorm.DB, uid uuid.UUID) (int64, error) {
 
-	db = db.Debug().Model(&User{}).Where("id = ?", uid).Take(&User{}).Delete(&User{})
+	db = db.Debug().Model(&User{}).Where("userId = ?", uid).Take(&User{}).Delete(&User{})
 
 	if db.Error != nil {
 		return 0, db.Error
